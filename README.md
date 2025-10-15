@@ -16,10 +16,15 @@ my setup:
 - the first thing i did was to make a test run of the model, training a model with depth of 4, it took like 45min and i got familiar with the process. after understanding a couple things, i started to brainstorm a few ideas on what to tweak: pretraining dataset, hyperparameters, improve the ui, etc. 
 
 
+# training
+torchrun --standalone --nproc_per_node=8 -m scripts.base_train -- \  
+  --depth=14 \  
+  --device_batch_size=56 \  
+  --total_batch_size=1048576
+
 
 
 # Things to play around with
-- Modify the pre-training dataset ([FineWeb](https://huggingface.co/spaces/HuggingFaceFW/blogpost-fineweb-v1) edu)
 - Modify the mid-training dataset (Smol smaltalk)
 - Improve the ui: 
   - model picker
