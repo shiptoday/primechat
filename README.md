@@ -12,16 +12,35 @@ my setup:
     2008 GB RAM • 192 vCPU
     Total Disk: 80 GB
     $28.72/hr
+    pod template: pytorch 2.8.0 (runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404)
 - macos as my local machine, using cursor to ssh into runpod
 - the first thing i did was to make a test run of the model, training a model with depth of 4, it took like 45min and i got familiar with the process. after understanding a couple things, i started to brainstorm a few ideas on what to tweak: pretraining dataset, hyperparameters, improve the ui, etc. 
 
 
-# training
-torchrun --standalone --nproc_per_node=8 -m scripts.base_train -- \  
-  --depth=14 \  
-  --device_batch_size=56 \  
-  --total_batch_size=1048576
+# Replicate (step by stepy commands)
 
+git clone https://github.com/shiptoday/primechat.git
+cd nanochat
+command -v uv &> /dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh
+[ -d ".venv" ] || uv venv
+uv sync
+source .venv/bin/activate
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+source "$HOME/.cargo/env"
+uv run maturin develop --release --manifest-path rustbpe/Cargo.toml
+python -m nanochat.dataset -n 240
+python -m scripts.tok_train --max_chars=2000000000
+python -m scripts.tok_eval
+curl -L -o eval_bundle.zip https://karpathy-public.s3.us-west-2.amazonaws.com/eval_bundle.zip
+unzip -q eval_bundle.zip
+rm eval_bundle.zip
+mv eval_bundle "$HOME/.cache/nanochat"
+wandb login
+torchrun --standalone --nproc_per_node=8 -m scripts.base_train -- \
+  --depth=20 \
+  --device_batch_size=64 \
+  --total_batch_size=1048576 \
+  --run=primechat_v1
 
 
 # Things to play around with
